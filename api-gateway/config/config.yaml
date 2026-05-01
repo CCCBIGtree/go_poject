@@ -1,0 +1,33 @@
+server:
+  address: ":8080"
+
+rate_limit:
+  enabled: true
+  rps: 50
+  burst: 100
+
+circuit_breaker:
+  enabled: true
+  failure_threshold: 5
+  success_threshold: 2
+  open_timeout_seconds: 10
+  sliding_window_size: 20
+
+middleware:
+  - ratelimit
+  - circuitbreaker
+  - logger
+
+routes:
+  - path_prefix: "/user"
+    upstreams:
+      - "http://localhost:9001"
+      - "http://localhost:9002"
+  - path_prefix: "/order"
+    upstreams:
+      - "http://localhost:9011"
+      - "http://localhost:9012"
+
+metadata:
+  project: "api-gateway"
+  env: "dev"
