@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Gateway Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #172033;
+      --muted: #637083;
+      --line: #dce3ed;
+      --blue: #2563eb;
+      --green: #0f9f6e;
+      --red: #dc2626;
+      --ink: #0f172a;
+      --shadow: 0 18px 42px rgba(18, 32, 56, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 28px;
+      font-weight: 720;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(15, 159, 110, .14);
+    }
+
+    .dot.error {
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, .14);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      min-height: 142px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+
+    .value {
+      margin-top: 18px;
+      color: var(--ink);
+      font-size: 38px;
+      font-weight: 760;
+      line-height: 1;
+    }
+
+    .unit {
+      margin-left: 6px;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 560;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--blue);
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #b7c6dc;
+      background: #f8fbff;
+    }
+
+    .chart {
+      width: 100%;
+      height: 260px;
+      padding: 18px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .axis {
+      stroke: #c9d3e2;
+      stroke-width: 1;
+    }
+
+    .line {
+      fill: none;
+      stroke: var(--blue);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .area {
+      fill: rgba(37, 99, 235, .12);
+    }
+
+    .empty {
+      fill: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100% - 20px, 1120px);
+        padding: 18px 0;
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        min-height: 116px;
+      }
+
+      .value {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>API Gateway Dashboard</h1>
+        <div class="subtitle">http://127.0.0.1:8080</div>
+      </div>
+      <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Connected</span></div>
+    </header>
+
+    <section class="grid" aria-label="Gateway metrics">
+      <article class="metric">
+        <div class="label">Requests</div>
+        <div class="value" id="requests">0</div>
+      </article>
+      <article class="metric">
+        <div class="label">Errors</div>
+        <div class="value" id="errors">0</div>
+      </article>
+      <article class="metric">
+        <div class="label">Average Latency</div>
+        <div class="value"><span id="latency">0</span><span class="unit" id="latencyUnit">ms</span></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Request Trend</div>
+        <button id="refresh" title="Refresh metrics" aria-label="Refresh metrics">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="chart">
+        <svg id="chart" viewBox="0 0 720 240" role="img" aria-label="Requests over time"></svg>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      history: [],
+      maxPoints: 24,
+    };
+
+    const els = {
+      requests: document.getElementById("requests"),
+      errors: document.getElementById("errors"),
+      latency: document.getElementById("latency"),
+      latencyUnit: document.getElementById("latencyUnit"),
+      statusDot: document.getElementById("statusDot"),
+      statusText: document.getElementById("statusText"),
+      chart: document.getElementById("chart"),
+      refresh: document.getElementById("refresh"),
+    };
+
+    function formatLatency(ns) {
+      if (!Number.isFinite(ns) || ns <= 0) {
+        return { value: "0", unit: "ms" };
+      }
+      const ms = ns / 1_000_000;
+      if (ms < 1) {
+        return { value: (ns / 1_000).toFixed(1), unit: "us" };
+      }
+      return { value: ms.toFixed(2), unit: "ms" };
+    }
+
+    function setStatus(ok) {
+      els.statusDot.classList.toggle("error", !ok);
+      els.statusText.textContent = ok ? "Connected" : "Disconnected";
+    }
+
+    function renderChart() {
+      const width = 720;
+      const height = 240;
+      const pad = 18;
+      const points = state.history;
+      els.chart.innerHTML = "";
+
+      const axis = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      axis.setAttribute("class", "axis");
+      axis.setAttribute("d", `M${pad} ${height - pad}H${width - pad}`);
+      els.chart.appendChild(axis);
+
+      if (points.length < 2) {
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("class", "empty");
+        text.setAttribute("x", width / 2);
+        text.setAttribute("y", height / 2);
+        text.setAttribute("text-anchor", "middle");
+        text.textContent = "Waiting for metrics";
+        els.chart.appendChild(text);
+        return;
+      }
+
+      const max = Math.max(...points, 1);
+      const xStep = (width - pad * 2) / (points.length - 1);
+      const coords = points.map((value, index) => {
+        const x = pad + index * xStep;
+        const y = height - pad - (value / max) * (height - pad * 2);
+        return [x, y];
+      });
+
+      const lineD = coords.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+      const areaD = `${lineD} L${coords[coords.length - 1][0].toFixed(1)} ${height - pad} L${coords[0][0].toFixed(1)} ${height - pad} Z`;
+
+      const area = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      area.setAttribute("class", "area");
+      area.setAttribute("d", areaD);
+      els.chart.appendChild(area);
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      line.setAttribute("class", "line");
+      line.setAttribute("d", lineD);
+      els.chart.appendChild(line);
+    }
+
+    async function refreshMetrics() {
+      try {
+        const response = await fetch("/metrics", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        const requests = Number(data.requests_total || 0);
+        const errors = Number(data.errors_total || 0);
+        const latency = formatLatency(Number(data.avg_latency_ns || 0));
+
+        els.requests.textContent = requests.toLocaleString();
+        els.errors.textContent = errors.toLocaleString();
+        els.latency.textContent = latency.value;
+        els.latencyUnit.textContent = latency.unit;
+
+        state.history.push(requests);
+        state.history = state.history.slice(-state.maxPoints);
+        setStatus(true);
+        renderChart();
+      } catch (error) {
+        setStatus(false);
+      }
+    }
+
+    els.refresh.addEventListener("click", refreshMetrics);
+    refreshMetrics();
+    setInterval(refreshMetrics, 3000);
+  </script>
+</body>
+</html>
