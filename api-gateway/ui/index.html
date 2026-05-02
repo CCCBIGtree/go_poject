@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go API Gateway Dashboard</title>
+  <link rel="stylesheet" href="/dashboard/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>API Gateway Dashboard</h1>
+    <p class="sub">实时查看请求量、错误量、平均延迟（基于 /metrics）。</p>
+
+    <section class="cards">
+      <div class="card">
+        <h2>Requests Total</h2>
+        <p id="requests">0</p>
+      </div>
+      <div class="card">
+        <h2>Errors Total</h2>
+        <p id="errors">0</p>
+      </div>
+      <div class="card">
+        <h2>Avg Latency (ms)</h2>
+        <p id="latency">0</p>
+      </div>
+      <div class="card">
+        <h2>Current QPS</h2>
+        <p id="qps">0</p>
+      </div>
+    </section>
+
+    <section class="chart-wrap">
+      <h2>QPS Trend (last 30 samples)</h2>
+      <canvas id="qpsChart" width="1000" height="260"></canvas>
+    </section>
+  </main>
+
+  <script src="/dashboard/app.js"></script>
+</body>
+</html>
