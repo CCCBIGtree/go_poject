@@ -10,6 +10,7 @@ import (
 	"go_poject/api-gateway/loadbalancer"
 	"go_poject/api-gateway/metrics"
 	"go_poject/api-gateway/proxy"
+	"go_poject/api-gateway/web"
 )
 
 type GatewayRouter struct {
@@ -23,6 +24,12 @@ func NewGatewayRouter(routes []config.RouteConfig, lb *loadbalancer.RoundRobin, 
 }
 
 func (g *GatewayRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(web.DashboardHTML))
+		return
+	}
+
 	if r.URL.Path == "/metrics" {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(g.metrics.Snapshot())
